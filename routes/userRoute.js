@@ -24,7 +24,8 @@ router.post('/login', logIn)
 router.put('/logout/:id', signOut)
 router.get('/loginusers', allLoginUsers)
 router.put('/changepassword/:id', changePassword)
-router.put('/changepassword/:id', forgotPassword)
+// router.post('/changepassword/:id/:token', forgotPassword)
+router.post('/resetemail', forgotPassword)
 
 module.exports = router;
 

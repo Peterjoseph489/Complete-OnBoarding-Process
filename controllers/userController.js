@@ -253,7 +253,28 @@ const changePassword = async(req, res)=>{
 
 const forgotPassword = async (req, res)=>{
     try {
-        
+        const { email } = req.body;
+        const isEmail = await userModel.findOne({ email });
+        if (!isEmail) {
+            res.status(404).json({
+                message: 'Email not found'
+            })
+        } else {
+            const token = jwt.sign({
+                id:isEmail.id
+            }, process.env.JWT_SECRET, {expiresIn: '5m'})
+            const subject = 'Link for Reset password'
+            const link = `${req.protocol}://${req.get('host')}/api/changepassword/${isEmail._id}/${token}`
+            const message = `Forgot your Password? it's okay, kindly use this link ${link} to re-set your account password. Kindly note that this link will expire after 5(five) Minutes.`
+            emailSender({
+                email,
+                subject,
+                message
+            });
+            res.status(200).json({
+                message: 'Email sent successfully, please check your Email for the link to reset your Password'
+            })
+        }
     } catch (error) {
         res.status(500).json({
             message: error.message
