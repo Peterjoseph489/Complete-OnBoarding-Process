@@ -5,52 +5,52 @@ const jwt = require('jsonwebtoken');
 const emailSender = require('..//middlewares/email')
 
 
-// REGISTER USER
-const registration = async (req, res)=>{
-    try {
-        const { username, email, password } = req.body;
-        const isEmail = await userModel.findOne({email});
-        if (isEmail) {
-            res.status(400).json({
-                message: `User with this Email: ${email} already exist.`
-            })
-        } else {
-            const salt = await bcrypt.genSalt(10);
-            const hashPassword = await bcrypt.hash( password, salt )
-            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
-            const data = {
-                username,
-                email: email.toLowerCase(),
-                password: hashPassword,
-                token: token
-            };
-            const user = new userModel(data);
-            const savedUser = await user.save();
-            const subject = 'Kindly Verify'
-            const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
-            const message = `Welcome onBoard, kindly use this link ${link} to verify your account. Kindly note that this link will expire after 5(five) Minutes.`
-            emailSender({
-                email: savedUser.email,
-                subject,
-                message
-            });
-            if (!savedUser) {
-                res.status(400).json({
-                    message: 'Failed to Create Account'
-                })
-            } else {
-                res.status(201).json({
-                    message: 'Successfully created account',
-                    data: savedUser
-                });
-            }
-        }
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        })
-    }
-}; 
+// // REGISTER USER
+// const registration = async (req, res)=>{
+//     try {
+//         const { username, email, password } = req.body;
+//         const isEmail = await userModel.findOne({email});
+//         if (isEmail) {
+//             res.status(400).json({
+//                 message: `User with this Email: ${email} already exist.`
+//             })
+//         } else {
+//             const salt = await bcrypt.genSalt(10);
+//             const hashPassword = await bcrypt.hash( password, salt )
+//             const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
+//             const data = {
+//                 username,
+//                 email: email.toLowerCase(),
+//                 password: hashPassword,
+//                 token: token
+//             };
+//             const user = new userModel(data);
+//             const savedUser = await user.save();
+//             const subject = 'Kindly Verify'
+//             const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
+//             const message = `Welcome onBoard, kindly use this link ${link} to verify your account. Kindly note that this link will expire after 5(five) Minutes.`
+//             emailSender({
+//                 email: savedUser.email,
+//                 subject,
+//                 message
+//             });
+//             if (!savedUser) {
+//                 res.status(400).json({
+//                     message: 'Failed to Create Account'
+//                 })
+//             } else {
+//                 res.status(201).json({
+//                     message: 'Successfully created account',
+//                     data: savedUser
+//                 });
+//             }
+//         }
+//     } catch (error) {
+//         res.status(500).json({
+//             message: error.message
+//         })
+//     }
+// }; 
 
 
 const verifyEmail = async (req, res)=>{
@@ -320,6 +320,76 @@ const resetPassword = async (req, res) => {
         })
     }
 }
+
+
+
+
+// Using MailTrap for Email Handling
+
+// const transport = require('../middlewares/mailTrap');
+// const baseUrl = process.env.BASE_URL
+// const mailOptions = {
+//     from: process.env.user,
+//     to: email,
+//     subject:'Verify your Account',
+//     html: `Please click on the link to verify your email: <a href="${baseUrl}/users/verify-email/${ token }">Verify Email</a>`
+// }
+
+// await transporter.sendMail( mailOptions );
+
+
+// REGISTER USER
+const transport = require('../middlewares/mailTrap');
+const registration = async (req, res)=>{
+    try {
+        const { username, email, password } = req.body;
+        const isEmail = await userModel.findOne({email});
+        if (isEmail) {
+            res.status(400).json({
+                message: `User with this Email: ${email} already exist.`
+            })
+        } else {
+            const salt = await bcrypt.genSalt(10);
+            const hashPassword = await bcrypt.hash( password, salt )
+            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
+            const data = {
+                username,
+                email: email.toLowerCase(),
+                password: hashPassword,
+                token: token
+            };
+            const user = new userModel(data);
+            const savedUser = await user.save();
+            const baseUrl = process.env.BASE_URL
+            const mailOptions = {
+                from: process.env.user,
+                to: email,
+                subject:'Verify your Account',
+                // const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
+                html: `Please click on the link to verify your email: <a href="${baseUrl}/api/verify/${savedUser._id}/${ token }">Verify Email</a>`
+            }
+            await transport.sendMail( mailOptions );
+            if (!savedUser) {
+                res.status(400).json({
+                    message: 'Failed to Create Account'
+                })
+            } else {
+                res.status(201).json({
+                    message: 'Successfully created account',
+                    data: savedUser
+                });
+            }
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+
 
 
 
