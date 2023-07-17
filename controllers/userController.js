@@ -251,6 +251,17 @@ const changePassword = async(req, res)=>{
 }
 
 
+const forgotPassword = async (req, res)=>{
+    try {
+        
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
+
+
 module.exports = {
     registration,
     verifyEmail,
@@ -258,5 +269,6 @@ module.exports = {
     logIn,
     signOut,
     allLoginUsers,
-    changePassword
+    changePassword,
+    forgotPassword
 }

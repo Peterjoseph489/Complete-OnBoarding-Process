@@ -5,7 +5,8 @@ const {
     logIn,
     signOut,
     allLoginUsers,
-    changePassword
+    changePassword,
+    forgotPassword
 } = require('../controllers/userController')
 const {
     userAuth
@@ -23,6 +24,7 @@ router.post('/login', logIn)
 router.put('/logout/:id', signOut)
 router.get('/loginusers', allLoginUsers)
 router.put('/changepassword/:id', changePassword)
+router.put('/changepassword/:id', forgotPassword)
 
 module.exports = router;
 
