@@ -280,7 +280,47 @@ const forgotPassword = async (req, res)=>{
             message: error.message
         })
     }
+};
+
+
+const resetPassword = async (req, res) => {
+    try {
+        const {token} = req.params;
+        const registeredToken = token;
+        const { password } = req.body;
+        const { id } = req.params;
+        const userpassword = await userModel.findById(id);
+        if (!userpassword) {
+            res.status(404).json({
+                message: 'User not found'
+            })
+        } else {
+            const salt = bcrypt.genSaltSync(10);
+            const hash = bcrypt.hashSync(password, salt);
+            const final = await userModel.findByIdAndUpdate(userpassword, {password: hash}, {new: true});
+            await jwt.verify(registeredToken, process.env.JWT_SECRET, (err)=>{
+                if(err) {
+                    res.json('This Link is Expired. Send another Password Verification')
+                } else {
+                    if(!final){
+                        res.status(404).json({
+                            message: 'Failed to change Password'
+                        })
+                    } else {
+                        res.status(200).json({
+                            message: `Password changed successfully`
+                        })
+                    }
+                }
+            })
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
 }
+
 
 
 module.exports = {
@@ -291,5 +331,6 @@ module.exports = {
     signOut,
     allLoginUsers,
     changePassword,
-    forgotPassword
+    forgotPassword,
+    resetPassword
 }
