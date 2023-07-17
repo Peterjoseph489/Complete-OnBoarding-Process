@@ -4,7 +4,8 @@ const {
     resendEmailVerification,
     logIn,
     signOut,
-    allLoginUsers
+    allLoginUsers,
+    changePassword
 } = require('../controllers/userController')
 const {
     userAuth
@@ -21,6 +22,7 @@ router.put('/re-verify', resendEmailVerification)
 router.post('/login', logIn)
 router.put('/logout/:id', signOut)
 router.get('/loginusers', allLoginUsers)
+router.put('/changepassword/:id', changePassword)
 
 module.exports = router;
 

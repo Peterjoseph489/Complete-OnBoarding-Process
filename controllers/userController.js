@@ -224,11 +224,39 @@ const genToken = async(user)=>{
 };
 
 
+const changePassword = async(req, res)=>{
+    try {
+        const { password } = req.body;
+        const { id } = req.params;
+        const userpassword = await userModel.findById(id);
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+        const final = await userModel.findByIdAndUpdate(userpassword, {password: hash}, {new: true});
+        if (!final) {
+            res.status(400).json({
+                message: 'Failed to Change Password'
+            })
+        } else {
+            res.status(200).json({
+                message: 'Password Changed Successfully',
+                data: userpassword
+            })
+        }
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
+
+
 module.exports = {
     registration,
     verifyEmail,
     resendEmailVerification,
     logIn,
     signOut,
-    allLoginUsers
+    allLoginUsers,
+    changePassword
 }
