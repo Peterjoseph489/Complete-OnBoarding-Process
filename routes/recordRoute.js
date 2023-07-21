@@ -5,16 +5,21 @@ const {
     updateRecord,
     deleteRecord
 } = require('../controllers/recordController')
-const {userAuth} = require('../middlewares/authMiddleware')
+const {
+    userAuth,
+    isAdminAuthorized,
+    isSuperAdminAuthorized,
+    loginAuth
+} = require('../middlewares/authMiddleware')
 
 const express = require('express');
 const routere = express.Router();
 
-routere.post('/records', userAuth, createRecord);
-routere.get('/records', userAuth, getRecords);
-routere.get('/records/:id', userAuth, getRecord);
-routere.put('/records/:id', userAuth, updateRecord);
-routere.delete('/records/:id', userAuth, deleteRecord);
+routere.post('/records/:id', userAuth, loginAuth, createRecord);
+routere.get('/record/:id', userAuth, loginAuth, getRecords);
+routere.get('/:recordId/records/:id', userAuth, loginAuth, getRecord);
+routere.put('/:recordId/records/:id', isAdminAuthorized, loginAuth, updateRecord);
+routere.delete('/:recordId/records/:id', isAdminAuthorized, loginAuth, deleteRecord);
 
 
 module.exports = routere;

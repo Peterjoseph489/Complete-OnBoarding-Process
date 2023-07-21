@@ -6,51 +6,51 @@ const emailSender = require('..//middlewares/email')
 
 
 // // REGISTER USER
-// const registration = async (req, res)=>{
-//     try {
-//         const { username, email, password } = req.body;
-//         const isEmail = await userModel.findOne({email});
-//         if (isEmail) {
-//             res.status(400).json({
-//                 message: `User with this Email: ${email} already exist.`
-//             })
-//         } else {
-//             const salt = await bcrypt.genSalt(10);
-//             const hashPassword = await bcrypt.hash( password, salt )
-//             const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
-//             const data = {
-//                 username,
-//                 email: email.toLowerCase(),
-//                 password: hashPassword,
-//                 token: token
-//             };
-//             const user = new userModel(data);
-//             const savedUser = await user.save();
-//             const subject = 'Kindly Verify'
-//             const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
-//             const message = `Welcome onBoard, kindly use this link ${link} to verify your account. Kindly note that this link will expire after 5(five) Minutes.`
-//             emailSender({
-//                 email: savedUser.email,
-//                 subject,
-//                 message
-//             });
-//             if (!savedUser) {
-//                 res.status(400).json({
-//                     message: 'Failed to Create Account'
-//                 })
-//             } else {
-//                 res.status(201).json({
-//                     message: 'Successfully created account',
-//                     data: savedUser
-//                 });
-//             }
-//         }
-//     } catch (error) {
-//         res.status(500).json({
-//             message: error.message
-//         })
-//     }
-// }; 
+const registration = async (req, res)=>{
+    try {
+        const { username, email, password } = req.body;
+        const isEmail = await userModel.findOne({email});
+        if (isEmail) {
+            res.status(400).json({
+                message: `User with this Email: ${email} already exist.`
+            })
+        } else {
+            const salt = await bcrypt.genSalt(10);
+            const hashPassword = await bcrypt.hash( password, salt )
+            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            const data = {
+                username,
+                email: email.toLowerCase(),
+                password: hashPassword,
+                token: token
+            };
+            const user = new userModel(data);
+            const savedUser = await user.save();
+            const subject = 'Kindly Verify'
+            const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
+            const message = `Welcome onBoard, kindly use this link ${link} to verify your account. Kindly note that this link will expire after 5(five) Minutes.`
+            emailSender({
+                email: savedUser.email,
+                subject,
+                message
+            });
+            if (!savedUser) {
+                res.status(400).json({
+                    message: 'Failed to Create Account'
+                })
+            } else {
+                res.status(201).json({
+                    message: 'Successfully created account',
+                    data: savedUser
+                });
+            }
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}; 
 
 
 const verifyEmail = async (req, res)=>{
@@ -94,7 +94,7 @@ const resendEmailVerification = async(req, res)=>{
             })
         }else {
             const verified = await userModel.findByIdAndUpdate(user._id, {isVerified: true})
-            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
+            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '1d'});
             await jwt.verify(token, process.env.JWT_SECRET, (err)=>{
                 if(err) {
                     res.json('This Link is Expired. Please try again')
@@ -324,61 +324,74 @@ const resetPassword = async (req, res) => {
 
 
 
+
+
+
 // Using MailTrap for Email Handling
 
-// const transport = require('../middlewares/mailTrap');
-// const baseUrl = process.env.BASE_URL
-// const mailOptions = {
-//     from: process.env.user,
-//     to: email,
-//     subject:'Verify your Account',
-//     html: `Please click on the link to verify your email: <a href="${baseUrl}/users/verify-email/${ token }">Verify Email</a>`
-// }
-
-// await transporter.sendMail( mailOptions );
-
-
 // REGISTER USER
-const transport = require('../middlewares/mailTrap');
-const registration = async (req, res)=>{
+// const transport = require('../middlewares/mailTrap');
+// const registration = async (req, res)=>{
+//     try {
+//         const { username, email, password } = req.body;
+//         const isEmail = await userModel.findOne({email});
+//         if (isEmail) {
+//             res.status(400).json({
+//                 message: `User with this Email: ${email} already exist.`
+//             })
+//         } else {
+//             const salt = await bcrypt.genSalt(10);
+//             const hashPassword = await bcrypt.hash( password, salt )
+//             const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
+//             const data = {
+//                 username,
+//                 email: email.toLowerCase(),
+//                 password: hashPassword,
+//                 token: token
+//             };
+//             const user = new userModel(data);
+//             const savedUser = await user.save();
+//             const baseUrl = process.env.BASE_URL
+//             const mailOptions = {
+//                 from: process.env.user,
+//                 to: email,
+//                 subject:'Verify your Account',
+//                 // const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
+//                 html: `Please click on the link to verify your email: <a href="${baseUrl}/api/verify/${savedUser._id}/${ token }">Verify Email</a>`
+//             }
+//             await transport.sendMail( mailOptions );
+//             if (!savedUser) {
+//                 res.status(400).json({
+//                     message: 'Failed to Create Account'
+//                 })
+//             } else {
+//                 res.status(201).json({
+//                     message: 'Successfully created account',
+//                     data: savedUser
+//                 });
+//             }
+//         }
+//     } catch (error) {
+        // res.status(500).json({
+        //     message: error.message
+        // })
+//     }
+// };
+
+
+
+const allUsers = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
-        const isEmail = await userModel.findOne({email});
-        if (isEmail) {
-            res.status(400).json({
-                message: `User with this Email: ${email} already exist.`
+        const users = await userModel.find({isAdmin: false});
+        if (users.length == 0) {
+            res.status(404).json({
+                message: ' No User not found'
             })
         } else {
-            const salt = await bcrypt.genSalt(10);
-            const hashPassword = await bcrypt.hash( password, salt )
-            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '5m'});
-            const data = {
-                username,
-                email: email.toLowerCase(),
-                password: hashPassword,
-                token: token
-            };
-            const user = new userModel(data);
-            const savedUser = await user.save();
-            const baseUrl = process.env.BASE_URL
-            const mailOptions = {
-                from: process.env.user,
-                to: email,
-                subject:'Verify your Account',
-                // const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
-                html: `Please click on the link to verify your email: <a href="${baseUrl}/api/verify/${savedUser._id}/${ token }">Verify Email</a>`
-            }
-            await transport.sendMail( mailOptions );
-            if (!savedUser) {
-                res.status(400).json({
-                    message: 'Failed to Create Account'
-                })
-            } else {
-                res.status(201).json({
-                    message: 'Successfully created account',
-                    data: savedUser
-                });
-            }
+            res.status(200).json({
+                message: 'All Users found',
+                data: users
+            });
         }
     } catch (error) {
         res.status(500).json({
@@ -388,8 +401,72 @@ const registration = async (req, res)=>{
 };
 
 
+const updateUsers = async (req, res)=>{
+    try {
+        const { username, email, password } = req.body;
+        const { id } = req.params;
+        const user = await userModel.findById(id);
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash( password, salt );
+        const { adminId } = req.params;
+        const adminUser = await userModel.findById(adminId);
+        if (adminUser.isAdmin == false) {
+            res.status(400).json({
+                message: 'You are not an Admin, Therefore you are not allowed to access this'
+            })
+        } else {
+            const data = {
+                username: username || user.username,
+                email: email || user.email,
+                password: hashPassword || user.password
+            };
+            const updateUser = await userModel.findByIdAndUpdate(id, data, {new: true});
+            if (!updateUser) {
+                res.status(400).json({
+                    message: 'Failed to Update User'
+                })
+            } else {
+                res.status(200).json({
+                    message: 'User updated successfully',
+                    data: updateUser
+                })
+            }
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
 
 
+const deleteUser = async (req, res)=>{
+    try {
+        const { id } = req.params;
+        const { adminId } = req.params;
+        const adminUser = await userModel.findById(adminId);
+        if (adminUser.isAdmin == false) {
+            res.status(400).json({
+                message: 'You are not an Admin and cannot delete'
+            })
+        } else {
+            const deleteUser = await userModel.findByIdAndDelete(id);
+            if(!deleteUser) {
+                res.status(404).json({
+                    message: 'User not found'
+                });
+            } else {
+                res.status(200).json({
+                    message: 'User deleted successfully'
+                })
+            }
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
 
 
 
@@ -402,5 +479,8 @@ module.exports = {
     allLoginUsers,
     changePassword,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    allUsers,
+    updateUsers,
+    deleteUser
 }

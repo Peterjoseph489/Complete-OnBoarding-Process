@@ -1,4 +1,5 @@
 const recordModel = require('../models/recordModel');
+const userModel = require('../models/userModel');
 
 const createRecord = async (req, res)=>{
     try {
@@ -36,8 +37,8 @@ const getRecords = async (req, res)=>{
 
 const getRecord = async (req, res)=>{
     try {
-        const {id} = req.params;
-        const record = await recordModel.findById(id);
+        const { recordId } = req.params;
+        const record = await recordModel.findById(recordId);
         res.status(201).json({
             data: record
         });
@@ -51,16 +52,23 @@ const getRecord = async (req, res)=>{
 
 const updateRecord = async (req, res)=>{
     try {
-        const {id} = req.params;
+        const { recordId } = req.params;
+        const record = await recordModel.findById(recordId);
         const { math, english } = req.body
         const data = {
-            math,
-            english
+            math: math || record.math,
+            english: english || record.english
         }
-        const updatedrecord = await recordModel.findByIdAndUpdate(id, data, {new: true});
-        res.status(201).json({
-            data: updatedrecord
-        });
+        const updatedrecord = await recordModel.findByIdAndUpdate(recordId, data, {new: true});
+        if (!updatedrecord) {
+            res.status(400).json({
+                message: 'Record cannot be updated'
+            })
+        } else {
+            res.status(201).json({
+                data: updatedrecord
+            });
+        }
     } catch (error) {
         res.status(500).json({
             message: error.message
@@ -71,8 +79,8 @@ const updateRecord = async (req, res)=>{
 
 const deleteRecord = async (req, res)=>{
     try {
-        const {id} = req.params;
-        const deleterecord = await recordModel.findByIdAndDelete(id);
+        const { recordId } = req.params;
+        const deleterecord = await recordModel.findByIdAndDelete(recordId);
         res.status(201).json({
             message: 'Record deleted successfully',
             data: deleterecord,
