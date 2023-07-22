@@ -31,7 +31,7 @@ const router = express.Router();
 
 
 
-// Major Routes for Normal Users
+// Major Routes for Normal USERS
 router.post('/signup', registration)
 router.put('/verify/:id/:token', verifyEmail)
 router.put('/re-verify', resendEmailVerification)
@@ -42,12 +42,12 @@ router.post('/changepassword/:id/:token', resetPassword)
 router.post('/resetemail', forgotPassword)
 
 
-// Major Routes for Admin Users routes
+// Major Routes for ADMIN USERS routes
 router.post('/:adminId/updateusers/:id', userAuth, loginAuth, isAdminAuthorized, updateUsers)
 router.delete('/:adminId/deleteUsers/:id', userAuth, loginAuth, isAdminAuthorized, deleteUser)
 
 
-// Major Routes for Super Admin routes
+// Major Routes for SUPER ADMIN routes
 router.get('/allusers', userAuth, loginAuth, isSuperAdminAuthorized, allUsers)
 router.get('/loginusers', userAuth, loginAuth, isSuperAdminAuthorized, allLoginUsers)
 router.post('/createAdmin', userAuth, loginAuth, isSuperAdminAuthorized, createAdmin);
