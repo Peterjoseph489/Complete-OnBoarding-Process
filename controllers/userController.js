@@ -5,7 +5,11 @@ const jwt = require('jsonwebtoken');
 const emailSender = require('..//middlewares/email')
 
 
-// // REGISTER USER
+
+
+
+// FUNCTIONALITIES FOR USER ALONE
+// REGISTER USER 
 const registration = async (req, res)=>{
     try {
         const { username, email, password } = req.body;
@@ -93,7 +97,7 @@ const resendEmailVerification = async(req, res)=>{
                 message: 'User not found'
             })
         }else {
-            const verified = await userModel.findByIdAndUpdate(user._id, {isVerified: true})
+            const verified = await userModel.findByIdAndUpdate(user._id, {isVerified: true}); //This should not be here.
             const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '1d'});
             await jwt.verify(token, process.env.JWT_SECRET, (err)=>{
                 if(err) {
@@ -169,7 +173,7 @@ const signOut = async(req, res)=>{
     try {
         const { id } = req.params;
         token = ' ';
-        const userLogout = await userModel.findByIdAndUpdate(id, {token: token}, {islogin: false});
+        const userLogout = await userModel.findByIdAndUpdate(id, {token: token});
         const logout = await userModel.findByIdAndUpdate(id, {islogin: false});
         // userLogout.token = ' ';
         // user.islogin = false;
@@ -190,30 +194,7 @@ const signOut = async(req, res)=>{
     }
 }
 
-
-const allLoginUsers = async (req, res)=>{
-    try {
-        const loginUsers = await userModel.findAll({islogin: true})
-        if (loginUsers.length == 0) {
-            res.status(404).json({
-                message: 'No Login Users at the Moment'
-            })
-        } else {
-            res.status(200).json({
-                message: 'All Login Users',
-                data: loginUsers
-            });
-        }
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        })
-    }
-}
-
-
-
-
+// Gen-Token Function
 const genToken = async(user)=>{
     const token = await jwt.sign({
         userId: user._id,
@@ -379,7 +360,7 @@ const resetPassword = async (req, res) => {
 // };
 
 
-
+// For Super Admin
 const allUsers = async (req, res) => {
     try {
         const users = await userModel.find({isAdmin: false});
@@ -401,6 +382,21 @@ const allUsers = async (req, res) => {
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+// FUNCTIONALITIES FOR isAdmin ALONE
+// Update and Delete a User 
+// Updating a User.
 const updateUsers = async (req, res)=>{
     try {
         const { username, email, password } = req.body;
@@ -440,6 +436,7 @@ const updateUsers = async (req, res)=>{
 }
 
 
+// Deleting a User.
 const deleteUser = async (req, res)=>{
     try {
         const { id } = req.params;
@@ -470,6 +467,239 @@ const deleteUser = async (req, res)=>{
 
 
 
+
+// FUNCTIONALITIES FOR isSuperAdmin ALONE
+//Only Super Admin can do these functions.
+const createAdmin = async (req, res)=>{
+    try {
+        const { username, email, password } = req.body;
+        const isEmail = await userModel.findOne({email});
+        if (isEmail) {
+            res.status(400).json({
+                message: `User with this Email: ${email} already exist.`
+            })
+        } else {
+            const salt = await bcrypt.genSalt(10);
+            const hashPassword = await bcrypt.hash( password, salt )
+            const token = await jwt.sign({email}, process.env.JWT_SECRET, {expiresIn: '1d'});
+            const data = {
+                username,
+                email: email.toLowerCase(),
+                password: hashPassword,
+                token: token,
+                isAdmin: true
+            };
+            const user = new userModel(data);
+            const savedUser = await user.save();
+            const subject = 'Kindly Verify'
+            const link = `${req.protocol}://${req.get('host')}/api/verify/${savedUser._id}/${token}`
+            const message = `Welcome onBoard, kindly use this link ${link} to verify your account. Kindly note that this link will expire after 5(five) Minutes.`
+            emailSender({
+                email: savedUser.email,
+                subject,
+                message
+            });
+            if (!savedUser) {
+                res.status(400).json({
+                    message: 'Failed to Create Account'
+                })
+            } else {
+                res.status(201).json({
+                    message: 'Successfully created account',
+                    data: savedUser
+                });
+            }
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+// For Super Admin
+const allAdminUsers = async (req, res)=>{
+    try {
+        const adminUsers = await userModel.findAll({isAdmin: true})
+        if (adminUsers.length == 0) {
+            res.status(404).json({
+                message: 'No Login Users at the Moment'
+            })
+        } else {
+            res.status(200).json({
+                message: 'All Login Users',
+                data: adminUsers
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+
+// Upgrade a User to an Admin.
+const makeAdmin = async (req, res)=>{
+    try {
+        const { userId } = req.params;
+        const userInfo = await userModel.findById(userId);
+        const token = await jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '5m'});
+        // const user = await userModel.findByIdAndUpdate(userId, {isAdmin: true});
+        const subject = 'Kindly Verify'
+        const link = `${req.protocol}://${req.get('host')}/api/verifyMakeAdmin/${userInfo._id}/${token}`
+        const message = `Welcome onBoard, kindly use this link ${link} to verify your Admin account. Kindly note that this link will expire after 5(five) Minutes.`
+        emailSender({
+            email: userInfo.email,
+            subject,
+            message
+        });
+        const user = await userModel.findById(userId);
+        if (!user) {
+            res.status(404).json({
+                message: 'User does not Exist'
+            })
+        } else {
+            res.status(200).json({
+                message: 'Please check your Email for the Admin Verification Link'
+            })
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+const verifyMakeAdmin = async (req, res)=>{
+    try {
+        const {token} = req.params;
+        const registeredToken = token;
+        const { id } = req.params;
+        const admin = await userModel.findByIdAndUpdate(id, {isAdmin: true});
+        await jwt.verify(registeredToken, process.env.JWT_SECRET, (err)=>{
+            if(err) {
+                res.json('This Link is Expired. Send another Admin Verification')
+            } else {
+                if(!admin){
+                    res.status(404).json({
+                        message: 'Failed to change Password'
+                    })
+                } else {
+                    res.status(200).json({
+                        message: `Successfully Updated to Admin`
+                    })
+                }
+            }
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+
+
+
+
+
+// Upgrade an Admin to a Super Admin.
+const makeSuperAdmin = async (req, res)=>{
+    try {
+        const { userId } = req.params;
+        const userInfo = await userModel.findById(userId);
+        const token = await jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '5m'});
+        // const user = await userModel.findByIdAndUpdate(userId, {isAdmin: true});
+        const subject = 'Kindly Verify'
+        const link = `${req.protocol}://${req.get('host')}/api/verifyMakeSuperAdmin/${userInfo._id}/${token}`
+        const message = `Welcome onBoard, kindly use this link ${link} to verify your Account Upgrade to Super Admin. Kindly note that this link will expire after 5(five) Minutes.`
+        emailSender({
+            email: userInfo.email,
+            subject,
+            message
+        });
+        const user = await userModel.findById(userId);
+        if (!user) {
+            res.status(404).json({
+                message: 'User does not Exist'
+            })
+        } else {
+            res.status(200).json({
+                message: 'Please check your Email for the Super Admin Verification Link'
+            })
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+
+const verifyMakeSuperAdmin = async (req, res)=>{
+    try {
+        const {token} = req.params;
+        const registeredToken = token;
+        const { id } = req.params;
+        const admin = await userModel.findByIdAndUpdate(id, {isSuperAdmin: true});
+        await jwt.verify(registeredToken, process.env.JWT_SECRET, (err)=>{
+            if(err) {
+                res.json('This Link is Expired. Send another Admin Verification')
+            } else {
+                if(!admin){
+                    res.status(404).json({
+                        message: 'Failed to change Password'
+                    })
+                } else {
+                    res.status(200).json({
+                        message: `Successfully Updated to Super Admin`
+                    })
+                }
+            }
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+};
+
+
+const allLoginUsers = async (req, res)=>{
+    try {
+        const loginUsers = await userModel.findAll({islogin: true})
+        if (loginUsers.length == 0) {
+            res.status(404).json({
+                message: 'No Login Users at the Moment'
+            })
+        } else {
+            res.status(200).json({
+                message: 'All Login Users',
+                data: loginUsers
+            });
+        }
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        })
+    }
+}
+
+
+
+
+
+
 module.exports = {
     registration,
     verifyEmail,
@@ -482,5 +712,11 @@ module.exports = {
     resetPassword,
     allUsers,
     updateUsers,
-    deleteUser
-}
+    deleteUser,
+    createAdmin,
+    allAdminUsers,
+    makeAdmin,
+    verifyMakeAdmin,
+    makeSuperAdmin,
+    verifyMakeSuperAdmin
+};
