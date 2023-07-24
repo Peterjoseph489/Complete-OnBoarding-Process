@@ -14,9 +14,7 @@ const {
     createAdmin,
     allAdminUsers,
     makeAdmin,
-    verifyMakeAdmin,
-    makeSuperAdmin,
-    verifyMakeSuperAdmin
+    makeSuperAdmin
 } = require('../controllers/userController')
 const {
     userAuth,
@@ -43,19 +41,17 @@ router.post('/resetemail', forgotPassword)
 
 
 // Major Routes for ADMIN USERS routes
-router.post('/:adminId/updateusers/:id', userAuth, loginAuth, isAdminAuthorized, updateUsers)
-router.delete('/:adminId/deleteUsers/:id', userAuth, loginAuth, isAdminAuthorized, deleteUser)
+router.post('/:id/updateusers/:userId', userAuth, loginAuth, isAdminAuthorized, updateUsers)
+router.delete('/:id/deleteUsers/:userId', userAuth, loginAuth, isAdminAuthorized, deleteUser)
 
 
 // Major Routes for SUPER ADMIN routes
-router.get('/allusers', userAuth, loginAuth, isSuperAdminAuthorized, allUsers)
-router.get('/loginusers', userAuth, loginAuth, isSuperAdminAuthorized, allLoginUsers)
-router.post('/createAdmin', userAuth, loginAuth, isSuperAdminAuthorized, createAdmin);
-router.get('/allAdminUsers', userAuth, loginAuth, isSuperAdminAuthorized, allAdminUsers);
-router.post('/makeAdmin/:userId', userAuth, loginAuth, isSuperAdminAuthorized, makeAdmin);
-router.put('/verifyMakeAdmin/:id/:token', userAuth, loginAuth, isSuperAdminAuthorized, verifyMakeAdmin);
-router.post('/makeSuperAdmin/:userId', userAuth, loginAuth, isSuperAdminAuthorized, makeSuperAdmin);
-router.put('/verifyMakeSuperAdmin/:id/:token', userAuth, loginAuth, isSuperAdminAuthorized, verifyMakeSuperAdmin);
+router.get('/allusers/:id', userAuth, loginAuth, isSuperAdminAuthorized, allUsers)
+router.get('/loginusers/:id', userAuth, loginAuth, isSuperAdminAuthorized, allLoginUsers)
+router.post('/createAdmin/:id', userAuth, loginAuth, isSuperAdminAuthorized, createAdmin);
+router.get('/allAdminUsers/:id', userAuth, loginAuth, isSuperAdminAuthorized, allAdminUsers);
+router.post('/:id/makeAdmin/:userId', userAuth, loginAuth, isSuperAdminAuthorized, makeAdmin);
+router.post('/:id/makeSuperAdmin/:userId', userAuth, loginAuth, isSuperAdminAuthorized, makeSuperAdmin);
 
 
 

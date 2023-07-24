@@ -200,7 +200,7 @@ const genToken = async(user)=>{
         userId: user._id,
         username: user.username,
         email: user.email
-    }, process.env.JWT_SECRET, {expiresIn: '5m'})
+    }, process.env.JWT_SECRET, {expiresIn: '1d'})
     return token
 };
 
@@ -400,12 +400,12 @@ const allUsers = async (req, res) => {
 const updateUsers = async (req, res)=>{
     try {
         const { username, email, password } = req.body;
-        const { id } = req.params;
-        const user = await userModel.findById(id);
+        const { userId } = req.params;
+        const user = await userModel.findById(userId);
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash( password, salt );
-        const { adminId } = req.params;
-        const adminUser = await userModel.findById(adminId);
+        const { id } = req.params;
+        const adminUser = await userModel.findById(id);
         if (adminUser.isAdmin == false) {
             res.status(400).json({
                 message: 'You are not an Admin, Therefore you are not allowed to access this'
@@ -416,7 +416,7 @@ const updateUsers = async (req, res)=>{
                 email: email || user.email,
                 password: hashPassword || user.password
             };
-            const updateUser = await userModel.findByIdAndUpdate(id, data, {new: true});
+            const updateUser = await userModel.findByIdAndUpdate(userId, data, {new: true});
             if (!updateUser) {
                 res.status(400).json({
                     message: 'Failed to Update User'
@@ -439,15 +439,15 @@ const updateUsers = async (req, res)=>{
 // Deleting a User.
 const deleteUser = async (req, res)=>{
     try {
+        const { userId } = req.params;
         const { id } = req.params;
-        const { adminId } = req.params;
-        const adminUser = await userModel.findById(adminId);
+        const adminUser = await userModel.findById(id);
         if (adminUser.isAdmin == false) {
             res.status(400).json({
                 message: 'You are not an Admin and cannot delete'
             })
         } else {
-            const deleteUser = await userModel.findByIdAndDelete(id);
+            const deleteUser = await userModel.findByIdAndDelete(userId);
             if(!deleteUser) {
                 res.status(404).json({
                     message: 'User not found'
@@ -522,14 +522,14 @@ const createAdmin = async (req, res)=>{
 // For Super Admin
 const allAdminUsers = async (req, res)=>{
     try {
-        const adminUsers = await userModel.findAll({isAdmin: true})
+        const adminUsers = await userModel.find({isAdmin: true})
         if (adminUsers.length == 0) {
             res.status(404).json({
-                message: 'No Login Users at the Moment'
+                message: 'No Admin Users'
             })
         } else {
             res.status(200).json({
-                message: 'All Login Users',
+                message: 'All Admin Users',
                 data: adminUsers
             });
         }
@@ -548,24 +548,21 @@ const makeAdmin = async (req, res)=>{
     try {
         const { userId } = req.params;
         const userInfo = await userModel.findById(userId);
-        const token = await jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '5m'});
-        // const user = await userModel.findByIdAndUpdate(userId, {isAdmin: true});
-        const subject = 'Kindly Verify'
-        const link = `${req.protocol}://${req.get('host')}/api/verifyMakeAdmin/${userInfo._id}/${token}`
-        const message = `Welcome onBoard, kindly use this link ${link} to verify your Admin account. Kindly note that this link will expire after 5(five) Minutes.`
-        emailSender({
-            email: userInfo.email,
-            subject,
-            message
-        });
-        const user = await userModel.findById(userId);
-        if (!user) {
+        if (!userInfo) {
             res.status(404).json({
                 message: 'User does not Exist'
             })
         } else {
+            const user = await userModel.findByIdAndUpdate(userId, {isAdmin: true});
+            const subject = `Congratulation Admin ${userInfo.username}`
+            const message = `Welcome onBoard, You are an Admin for this Product. You now have access rights of an Admin.`
+            emailSender({
+                email: userInfo.email,
+                subject,
+                message
+            });
             res.status(200).json({
-                message: 'Please check your Email for the Admin Verification Link'
+                message: `Congratulations, ${userInfo.username} is now an Admin of this Product.`
             })
         }
     } catch (error) {
@@ -574,40 +571,6 @@ const makeAdmin = async (req, res)=>{
         })
     }
 };
-
-
-
-const verifyMakeAdmin = async (req, res)=>{
-    try {
-        const {token} = req.params;
-        const registeredToken = token;
-        const { id } = req.params;
-        const admin = await userModel.findByIdAndUpdate(id, {isAdmin: true});
-        await jwt.verify(registeredToken, process.env.JWT_SECRET, (err)=>{
-            if(err) {
-                res.json('This Link is Expired. Send another Admin Verification')
-            } else {
-                if(!admin){
-                    res.status(404).json({
-                        message: 'Failed to change Password'
-                    })
-                } else {
-                    res.status(200).json({
-                        message: `Successfully Updated to Admin`
-                    })
-                }
-            }
-        })
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        })
-    }
-};
-
-
-
-
 
 
 
@@ -617,25 +580,28 @@ const makeSuperAdmin = async (req, res)=>{
     try {
         const { userId } = req.params;
         const userInfo = await userModel.findById(userId);
-        const token = await jwt.sign({userId}, process.env.JWT_SECRET, {expiresIn: '5m'});
-        // const user = await userModel.findByIdAndUpdate(userId, {isAdmin: true});
-        const subject = 'Kindly Verify'
-        const link = `${req.protocol}://${req.get('host')}/api/verifyMakeSuperAdmin/${userInfo._id}/${token}`
-        const message = `Welcome onBoard, kindly use this link ${link} to verify your Account Upgrade to Super Admin. Kindly note that this link will expire after 5(five) Minutes.`
-        emailSender({
-            email: userInfo.email,
-            subject,
-            message
-        });
-        const user = await userModel.findById(userId);
-        if (!user) {
+        if (!userInfo) {
             res.status(404).json({
                 message: 'User does not Exist'
             })
         } else {
-            res.status(200).json({
-                message: 'Please check your Email for the Super Admin Verification Link'
-            })
+            const user = await userModel.findByIdAndUpdate(userId, {isSuperAdmin: true});
+            const subject = `Congratulation Super Admin ${userInfo.username}`
+            const message = `Welcome onBoard, You are a Super Admin for this Product. You now have access rights of a Super Admin.`
+            emailSender({
+                email: userInfo.email,
+                subject,
+                message
+            });
+            if (!user) {
+                res.status(400).json({
+                    message: 'Could not make Super Admin'
+                })
+            } else {
+                res.status(200).json({
+                    message: `Congratulations, ${userInfo.username} is now a Super Admin of this Product.`
+                })
+            }
         }
     } catch (error) {
         res.status(500).json({
@@ -646,38 +612,12 @@ const makeSuperAdmin = async (req, res)=>{
 
 
 
-const verifyMakeSuperAdmin = async (req, res)=>{
-    try {
-        const {token} = req.params;
-        const registeredToken = token;
-        const { id } = req.params;
-        const admin = await userModel.findByIdAndUpdate(id, {isSuperAdmin: true});
-        await jwt.verify(registeredToken, process.env.JWT_SECRET, (err)=>{
-            if(err) {
-                res.json('This Link is Expired. Send another Admin Verification')
-            } else {
-                if(!admin){
-                    res.status(404).json({
-                        message: 'Failed to change Password'
-                    })
-                } else {
-                    res.status(200).json({
-                        message: `Successfully Updated to Super Admin`
-                    })
-                }
-            }
-        })
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        })
-    }
-};
+
 
 
 const allLoginUsers = async (req, res)=>{
     try {
-        const loginUsers = await userModel.findAll({islogin: true})
+        const loginUsers = await userModel.find({islogin: true})
         if (loginUsers.length == 0) {
             res.status(404).json({
                 message: 'No Login Users at the Moment'
@@ -716,7 +656,5 @@ module.exports = {
     createAdmin,
     allAdminUsers,
     makeAdmin,
-    verifyMakeAdmin,
-    makeSuperAdmin,
-    verifyMakeSuperAdmin
+    makeSuperAdmin
 };

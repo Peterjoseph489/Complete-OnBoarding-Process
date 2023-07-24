@@ -17,9 +17,9 @@ const routere = express.Router();
 
 routere.post('/records/:id', userAuth, loginAuth, createRecord);
 routere.get('/record/:id', userAuth, loginAuth, getRecords);
-routere.get('/:recordId/records/:id', userAuth, loginAuth, getRecord);
-routere.put('/:recordId/records/:id', isAdminAuthorized, loginAuth, updateRecord);
-routere.delete('/:recordId/records/:id', isAdminAuthorized, loginAuth, deleteRecord);
+routere.get('/:id/records/:recordId', userAuth, loginAuth, getRecord);
+routere.put('/:id/records/:recordId', isAdminAuthorized, loginAuth, updateRecord);
+routere.delete('/:id/records/:recordId', isAdminAuthorized, loginAuth, deleteRecord);
 
 
 module.exports = routere;
